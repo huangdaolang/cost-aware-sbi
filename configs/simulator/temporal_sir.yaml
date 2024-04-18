@@ -1,6 +1,6 @@
 _target_: simulators.temporal_sir.TemporalSIR
 
-name: "temporal_sir"
+name: "temp_sir"
 prior_lower: [0.1, 0.1]
 prior_upper: [1.0, 1.0]
 
