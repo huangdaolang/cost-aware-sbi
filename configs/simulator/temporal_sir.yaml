@@ -1,0 +1,12 @@
+_target_: simulators.temporal_sir.TemporalSIR
+
+name: "temporal_sir"
+prior_lower: [0.1, 0.1]
+prior_upper: [1.0, 1.0]
+
+population: 1000
+
+theta_dim: 2
+x_dim: 12
+
+num_bins: 10
