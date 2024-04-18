@@ -14,7 +14,7 @@ def train(cfg):
     if cfg.device == "cuda":
         torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-    simulator = hydra.utils.instantiate(cfg.simulator, k=1)
+    simulator = hydra.utils.instantiate(cfg.simulator)
     prior = simulator.prior
 
     N = cfg.N
