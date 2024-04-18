@@ -1,0 +1,10 @@
+_target_: simulators.homo_sir.HomoSIR
+
+name: "homo_sir"
+prior_lower: 1
+prior_upper: 10
+
+theta_dim: 1
+x_dim: 1
+
+k: 1
