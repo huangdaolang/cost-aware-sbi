@@ -1,7 +1,9 @@
 import torch
+import time
 
-def bernSIR(n, beta, gamma, p):
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+def bernSIR(beta, gamma, p, device):
+    n = 100
     t = torch.tensor(0.0, device=device)
     MAT = torch.distributions.Bernoulli(torch.tensor([p], device=device)).sample((n, n)).squeeze()
     rowM = MAT.sum(dim=1)
@@ -32,11 +34,16 @@ def bernSIR(n, beta, gamma, p):
 
     return {'output': torch.tensor(output, device=device), 'count': count}
 
-# Example usage
-n = 100
-beta = 0.1
-gamma = 0.05
-p = 0.05
-result = bernSIR(n, beta, gamma, p)
-print("Recovery times:", result['output'])
-print("Number of recoveries:", result['count'])
+
+if __name__ == "__main__":
+    for i in range(10):
+        st = time.time()
+
+        beta = 1.0
+        gamma = 0.01
+        p = 0.05
+        result = bernSIR(beta, gamma, p, device=torch.device('cpu'))
+        # print("Recovery times:", result['output'])
+        # print("Number of recoveries:", result['count'])
+        et = time.time()
+        print(et - st)

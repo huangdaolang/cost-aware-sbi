@@ -3,7 +3,7 @@ import time
 
 
 def simSIR(beta, gamma, device):
-    N = 1000  # population size
+    N = 5000  # population size
     I = torch.tensor(1.0, device=device)  # infected individuals
     S = torch.tensor(N - 1.0, device=device)  # susceptible individuals
     t = torch.tensor(0.0, device=device)  # time
@@ -27,7 +27,8 @@ def simSIR(beta, gamma, device):
                      if types[i] == 2]
     final_size = N - S.item()
     T = times[-1]
-    print(len(times))
+    # print(removal_times)
+
     return {'removal_times': torch.tensor(removal_times, device=device),
             'final_size': torch.tensor(final_size, device=device),
             'T': torch.tensor(T, device=device)}
