@@ -1,0 +1,13 @@
+defaults:
+  - _self_
+  - simulator: homo_sir
+
+
+N_large: 50000
+N: 5000
+
+device: "cpu"
+
+checkpoint: True
+
+seed: 1
