@@ -1,0 +1,17 @@
+_target_: simulators.bernoulli_sir.BernSIR
+
+name: "bern_sir"
+
+p_lower: 0.0
+p_upper: 1.0
+beta_lower: 0.1
+beta_upper: 1.0
+gamma_concentration: 2.0
+gamma_rate: 1.0
+
+population: 100
+
+theta_dim: 3
+x_dim: 12
+
+num_bins: 10
