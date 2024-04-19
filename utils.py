@@ -1,5 +1,11 @@
 import torch
 import numpy as np
+import gpytorch
+from gpytorch.models import ExactGP
+from gpytorch.kernels import ScaleKernel, RBFKernel
+from gpytorch.means import ConstantMean
+from gpytorch.distributions import MultivariateNormal
+from gpytorch.mlls import ExactMarginalLogLikelihood
 
 
 def MMD_unweighted(x, y, lengthscale):
@@ -74,6 +80,32 @@ def gamma_sampler(theta, n=500):
     data[1] = utild[:, 0].std()
 
     return data
+
+
+class GP(ExactGP):
+    def __init__(self, train_x, train_y, likelihood):
+        if train_x is None:
+            train_x = torch.zeros(1)
+        if train_y is None:
+            train_y = torch.zeros(1)
+
+        super(GP, self).__init__(train_x, train_y, likelihood)
+
+        self.mean_module = ConstantMean()
+        self.covar_module = ScaleKernel(RBFKernel())
+
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+        return MultivariateNormal(mean_x, covar_x)
+
+
+def calc_acc_prob(model, likelihood, theta, prior_start, k):
+    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        cost = likelihood(model(theta)).mean
+
+        lower_cost = likelihood(model(prior_start)).mean
+    return (lower_cost ** k) / (cost**k)
 
 
 if __name__ == "__main__":
