@@ -16,6 +16,9 @@ class HomoSIR(object):
         self.x_dim = x_dim
         self.prior = Uniform(prior_lower * torch.ones(1), prior_upper * torch.ones(1))
 
+    def sample_theta(self, size):
+        return self.prior.sample(size)
+
     def __call__(self, thetas):
         l = thetas[0]
         S = self.N - 1

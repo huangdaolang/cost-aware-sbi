@@ -1,29 +1,33 @@
 import torch
 from sbi.utils.torchutils import *
+import torch.distributions as dist
 
 
 class TemporalSIR(object):
     def __init__(self,
                  name="temporal_sir",
                  population=1000,
-                 prior_lower=None,
-                 prior_upper=None,
+                 beta_lower=0.1,
+                 beta_upper=1.0,
+                 gamma_concentration=2.0,
+                 gamma_rate=1.0,
                  theta_dim=2,
                  x_dim=12,
                  num_bins=10):
-
-        if prior_lower is None:
-            prior_lower = [0.1, 0.1]
-        if prior_upper is None:
-            prior_upper = [1.0, 1.0]
 
         self.name = name
         self.N = population
         self.theta_dim = theta_dim
         self.x_dim = x_dim
         self.num_bins = num_bins
-        self.prior = Uniform(torch.tensor(prior_lower), torch.tensor(prior_upper))
-                      # Uniform(prior_lower[1] * torch.ones(1), prior_upper[1] * torch.ones(1))]
+        self.prior = [Uniform(torch.tensor([beta_lower]), torch.tensor([beta_upper])),
+                      dist.Gamma(concentration=torch.tensor([gamma_concentration]), rate=torch.tensor([gamma_rate]))]
+
+    def sample_theta(self, size):
+        beta = self.prior[0].sample(size).reshape(-1, 1)
+        gamma = self.prior[1].sample(size).reshape(-1, 1)
+
+        return torch.cat([beta, gamma], dim=1)
 
     def __call__(self, thetas):
         beta = thetas[0]
