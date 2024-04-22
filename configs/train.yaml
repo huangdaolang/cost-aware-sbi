@@ -1,13 +1,13 @@
 defaults:
   - _self_
-  - simulator: homo_sir
+  - simulator: bernoulli_sir
 
-
-N_large: 50000
 N: 5000
 
 device: "cpu"
 
 checkpoint: True
 
-seed: 1
+seed: 0
+
+k: 1
