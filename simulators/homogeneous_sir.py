@@ -8,7 +8,8 @@ class HomoSIR(object):
                  prior_lower=1,
                  prior_upper=10.0,
                  theta_dim=1,
-                 x_dim=1):
+                 x_dim=1,
+                 prior_start=None):
         self.name = name
         self.k = k
         self.N = 1000

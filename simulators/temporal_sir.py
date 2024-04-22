@@ -9,11 +9,12 @@ class TemporalSIR(object):
                  population=1000,
                  beta_lower=0.1,
                  beta_upper=1.0,
-                 gamma_concentration=2.0,
-                 gamma_rate=1.0,
+                 gamma_lower=0.1,
+                 gamma_upper=1.0,
                  theta_dim=2,
                  x_dim=12,
-                 num_bins=10):
+                 num_bins=10,
+                 prior_start=None):
 
         self.name = name
         self.N = population
@@ -21,7 +22,8 @@ class TemporalSIR(object):
         self.x_dim = x_dim
         self.num_bins = num_bins
         self.prior = [Uniform(torch.tensor([beta_lower]), torch.tensor([beta_upper])),
-                      dist.Gamma(concentration=torch.tensor([gamma_concentration]), rate=torch.tensor([gamma_rate]))]
+                      Uniform(torch.tensor([gamma_lower]), torch.tensor([gamma_upper]))]
+        # dist.Gamma(concentration=torch.tensor([gamma_concentration]), rate=torch.tensor([gamma_rate]))
 
     def sample_theta(self, size):
         beta = self.prior[0].sample(size).reshape(-1, 1)

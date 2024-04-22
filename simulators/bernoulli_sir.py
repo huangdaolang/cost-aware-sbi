@@ -7,16 +7,16 @@ class BernSIR(object):
     def __init__(self,
                  name="bern_sir",
                  population=100,
-                 p_lower=0.0,
-                 p_upper=1.0,
+                 p_concentration_1=3.0,
+                 p_concentration_2=2.0,
                  beta_lower=0.1,
                  beta_upper=1.0,
-                 beta_rate=2.0,
-                 gamma_concentration=2.0,
-                 gamma_rate=1.0,
+                 gamma_lower=0.1,
+                 gamma_upper=1.0,
                  theta_dim=3,
                  x_dim=12,
-                 num_bins=10):
+                 num_bins=10,
+                 prior_start=None):
 
         self.name = name
         self.N = population
@@ -24,8 +24,10 @@ class BernSIR(object):
         self.x_dim = x_dim
         self.num_bins = num_bins
         self.prior = [Uniform(torch.tensor([beta_lower]), torch.tensor([beta_upper])),
-                      dist.Gamma(concentration=torch.tensor([gamma_concentration]), rate=torch.tensor([gamma_rate])),
-                      Uniform(torch.tensor([p_lower]), torch.tensor([p_upper]))]  # beta dist
+                      # dist.Gamma(concentration=torch.tensor([gamma_concentration]), rate=torch.tensor([gamma_rate])),
+                      Uniform(torch.tensor([gamma_lower]), torch.tensor([gamma_upper])),
+                      dist.Beta(torch.tensor([p_concentration_1]), torch.tensor([p_concentration_2]))]
+                      # Uniform(torch.tensor([p_lower]), torch.tensor([p_upper]))]
 
     def sample_theta(self, size):
         beta = self.prior[0].sample(size).reshape(-1, 1)
