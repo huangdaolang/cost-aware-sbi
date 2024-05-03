@@ -5,14 +5,14 @@ from sbi.utils.torchutils import *
 class HomoSIR(object):
     def __init__(self, name="homo_sir",
                  k=1,
-                 prior_lower=1,
+                 prior_lower=1.0,
                  prior_upper=10.0,
                  theta_dim=1,
                  x_dim=1,
                  prior_start=None):
         self.name = name
         self.k = k
-        self.N = 1000
+        self.N = 10000
         self.theta_dim = theta_dim
         self.x_dim = x_dim
         self.prior = Uniform(prior_lower * torch.ones(1), prior_upper * torch.ones(1))
@@ -45,5 +45,5 @@ class HomoSIR(object):
 if __name__ == "__main__":
     l = 3
     k = 1
-    print(HomoSIR(1))
+    print(HomoSIR())
 
