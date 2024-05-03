@@ -2,8 +2,10 @@ _target_: simulators.bernoulli_sir.BernSIR
 
 name: "bern_sir"
 
-p_concentration_1: 3.0
-p_concentration_2: 2.0
+#p_concentration_1: 3.0
+#p_concentration_2: 2.0
+p_lower: 0.1
+p_upper: 1.0
 beta_lower: 0.1
 beta_upper: 1.0
 gamma_lower: 0.1
