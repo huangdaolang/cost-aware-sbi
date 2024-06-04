@@ -9,7 +9,8 @@ class HomoSIR(object):
                  prior_upper=10.0,
                  theta_dim=1,
                  x_dim=1,
-                 prior_start=None):
+                 prior_start=None,
+                 k_mixture=None):
         self.name = name
         self.k = k
         self.N = 10000

@@ -2,7 +2,7 @@ defaults:
   - _self_
   - simulator: bernoulli_sir
 
-N: 5000
+N: 10
 
 device: "cpu"
 
@@ -11,3 +11,5 @@ checkpoint: True
 seed: 0
 
 k: 1
+
+mixture: True

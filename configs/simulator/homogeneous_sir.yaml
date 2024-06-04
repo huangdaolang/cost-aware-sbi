@@ -10,3 +10,5 @@ x_dim: 1
 prior_start: [1.]
 
 k: 1
+
+k_mixture: [0., 0.5, 1., 2.]

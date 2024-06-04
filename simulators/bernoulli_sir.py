@@ -16,7 +16,8 @@ class BernSIR(object):
                  theta_dim=3,
                  x_dim=12,
                  num_bins=10,
-                 prior_start=None):
+                 prior_start=None,
+                 k_mixture=None):
 
         self.name = name
         self.N = population

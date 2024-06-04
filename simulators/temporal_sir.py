@@ -14,7 +14,8 @@ class TemporalSIR(object):
                  theta_dim=2,
                  x_dim=12,
                  num_bins=10,
-                 prior_start=None):
+                 prior_start=None,
+                 k_mixture=None):
 
         self.name = name
         self.N = population
