@@ -1,0 +1,15 @@
+_target_: simulators.dynamic_graph.DynamicGraph
+
+name: "dynamic_graph"
+
+alpha_lower: 0.0
+alpha_upper: 1.0
+beta_lower: 0.0
+beta_upper: 1.0
+
+graph_size: 20
+x_dim: 400 #20*20
+
+theta_dim: 2
+
+prior_start: [0.1, 1.0]
