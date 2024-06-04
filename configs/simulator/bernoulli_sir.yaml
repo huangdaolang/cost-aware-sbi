@@ -20,4 +20,4 @@ num_bins: 10
 
 prior_start: [0.1, 1.0, 0.001]
 
-k_mixture: [0., 0.5, 1., 2.]
+k_mixture: [0., 0.25, 1., 2.]
