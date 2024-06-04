@@ -123,7 +123,10 @@ def train(cfg):
 
         output_directory = get_original_cwd()
         print(f"{output_directory=}")
-        checkpoint_path = os.path.join(output_directory, "sims", simulator.name, str(cfg.k), str(cfg.seed))
+        if cfg.mixture is True:
+            checkpoint_path = os.path.join(output_directory, "sims", simulator.name, "mixture", str(cfg.seed))
+        else:
+            checkpoint_path = os.path.join(output_directory, "sims", simulator.name, str(cfg.k), str(cfg.seed))
         if not os.path.exists(checkpoint_path):
             os.makedirs(checkpoint_path)
 
