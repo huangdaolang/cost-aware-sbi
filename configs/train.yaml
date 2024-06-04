@@ -2,7 +2,7 @@ defaults:
   - _self_
   - simulator: bernoulli_sir
 
-N: 10
+N: 5000
 
 device: "cpu"
 
