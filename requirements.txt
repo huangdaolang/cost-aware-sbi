@@ -1,3 +1,7 @@
 torch==1.12.1
 sbi==0.22.0
 pyknos==0.15.2
+gpytorch==1.9.0
+numpy==1.22.4
+matplotlib==3.5.1
+scipy==1.7.3
