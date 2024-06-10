@@ -44,6 +44,7 @@ class BernSIR(object):
 
         t = torch.tensor(0.0)
         MAT = torch.distributions.Bernoulli(torch.tensor([p])).sample((self.N, self.N)).squeeze()
+        # MAT.fill_diagonal_(0)
         rowM = MAT.sum(dim=1)
         I = torch.zeros(self.N)
         I[0] = 1  # Set individual 1 infectious
