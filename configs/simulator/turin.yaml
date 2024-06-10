@@ -1,0 +1,17 @@
+_target_: simulators.turin.Turin
+
+name: "turin"
+
+theta_1_lower: 1e-9
+theta_1_upper: 1e-8
+theta_2_lower: 1e-9
+theta_2_upper: 1e-8
+theta_3_lower: 1e9
+theta_3_upper: 1e10
+theta_4_lower: 1e-10
+theta_4_upper: 1e-9
+
+theta_dim: 4
+x_dim: 801
+
+inference: "nle"
