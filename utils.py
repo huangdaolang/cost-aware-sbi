@@ -108,6 +108,30 @@ def calc_acc_prob(model, likelihood, theta, prior_start, k):
     return (lower_cost ** k) / (cost**k)
 
 
+def mad(data, axis=None):
+    return np.mean(np.abs(data - np.mean(data, axis)), axis)
+
+
+def rejection_ABC(s_obs, param, sumStats, epsilon_distance):
+    M = param.shape[0]
+
+    norm_factor = mad(sumStats, axis=0)
+
+    norm_sumStats = sumStats / norm_factor
+    norm_s_obs = s_obs / norm_factor
+
+    distance = np.linalg.norm(norm_sumStats - norm_s_obs, axis=1)
+
+    d_ = np.sort(distance)
+
+
+    indices = np.where(distance < epsilon_distance)[0]
+
+    posterior_samples = param[indices, :]
+
+    return posterior_samples, indices
+
+
 if __name__ == "__main__":
     theta = torch.tensor([2.0])
     data = gamma_sampler(theta)
