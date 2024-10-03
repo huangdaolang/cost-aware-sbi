@@ -65,6 +65,7 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
             show_progress_bars=show_progress_bars,
         )
         self._weights_roundwise = []
+        self._k_indicator_roundwise = []
 
         # As detailed in the docstring, `density_estimator` is either a string or
         # a callable. The function creating the neural network is attached to
@@ -77,8 +78,9 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
         else:
             self._build_neural_net = density_estimator
 
-    def append_weights(self, weights: Tensor):
+    def append_weights(self, weights: Tensor, k_indicator: Tensor):
         self._weights_roundwise.append(weights)
+        self._k_indicator_roundwise.append(k_indicator)
         return self
 
     def append_simulations(
@@ -143,7 +145,7 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
     def get_simulations(
         self,
         starting_round: int = 0,
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         r"""Returns all $\theta$, $x$, and prior_masks from rounds >= `starting_round`.
 
         If requested, do not return invalid data.
@@ -166,11 +168,14 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
         weights = get_simulations_since_round(
             self._weights_roundwise, self._data_round_index, starting_round
         )
+        k_indicator = get_simulations_since_round(
+            self._k_indicator_roundwise, self._data_round_index, starting_round
+        )
         prior_masks = get_simulations_since_round(
             self._prior_masks, self._data_round_index, starting_round
         )
 
-        return theta, x, weights, prior_masks
+        return theta, x, weights, k_indicator, prior_masks
 
     def get_dataloaders(
         self,
@@ -196,9 +201,9 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
         """
 
         #
-        theta, x, weights, prior_masks = self.get_simulations(starting_round)
+        theta, x, weights, k_indicator, prior_masks = self.get_simulations(starting_round)
 
-        dataset = data.TensorDataset(theta, x, weights, prior_masks)
+        dataset = data.TensorDataset(theta, x, weights, k_indicator, prior_masks)
 
         # Get total number of training examples.
         num_examples = theta.size(0)
@@ -292,7 +297,7 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
         # can `sample()` and `log_prob()`. The network is accessible via `.net`.
         if self._neural_net is None or retrain_from_scratch:
             # Get theta,x to initialize NN
-            theta, x, weights, _ = self.get_simulations(starting_round=start_idx)
+            theta, x, weights, k_indicator, _ = self.get_simulations(starting_round=start_idx)
             # Use only training data for building the neural net (z-scoring transforms)
             self._neural_net = self._build_neural_net(
                 theta[self.train_indices].to("cpu"),
@@ -320,13 +325,14 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
             train_log_probs_sum = 0
             for batch in train_loader:
                 self.optimizer.zero_grad()
-                theta_batch, x_batch, weights_batch = (
+                theta_batch, x_batch, weights_batch, k_indicator_batch = (
                     batch[0].to(self._device),
                     batch[1].to(self._device),
                     batch[2].to(self._device),
+                    batch[3].to(self._device),
                 )
                 # Evaluate on x with theta as context.
-                train_losses = self._loss(theta=theta_batch, x=x_batch, weights=weights_batch)
+                train_losses = self._loss(theta=theta_batch, x=x_batch, weights=weights_batch, k_indicator=k_indicator_batch)
                 train_loss = torch.mean(train_losses)
                 train_log_probs_sum -= train_losses.sum().item()
 
@@ -350,13 +356,14 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
             val_log_prob_sum = 0
             with torch.no_grad():
                 for batch in val_loader:
-                    theta_batch, x_batch, weights_batch = (
+                    theta_batch, x_batch, weights_batch, k_indicator_batch = (
                         batch[0].to(self._device),
                         batch[1].to(self._device),
                         batch[2].to(self._device),
+                        batch[3].to(self._device),
                     )
                     # Evaluate on x with theta as context.
-                    val_losses = self._loss(theta=theta_batch, x=x_batch, weights=weights_batch)
+                    val_losses = self._loss(theta=theta_batch, x=x_batch, weights=weights_batch, k_indicator=k_indicator_batch)
                     val_log_prob_sum -= val_losses.sum().item()
 
             # Take mean over all validation samples.
@@ -387,10 +394,27 @@ class CostAwareLikelihoodEstimator(LikelihoodEstimator):
 
         return deepcopy(self._neural_net)
 
-    def _loss(self, theta: Tensor, x: Tensor, weights: Tensor) -> Tensor:
+    def _loss(self, theta: Tensor, x: Tensor, weights: Tensor, k_indicator: Tensor) -> Tensor:
         r"""Return loss for SNLE, which is the likelihood of $-\log q(x_i | \theta_i)$.
 
         Returns:
             Negative log prob.
         """
-        return -weights*self._neural_net.log_prob(x, context=theta)/weights.sum()
+        log_prob = self._neural_net.log_prob(x, context=theta)
+
+        k = k_indicator.max().item() + 1
+
+        log_prob_groups = [[] for _ in range(k)]
+        weights_groups = [[] for _ in range(k)]
+        loss_groups = [[] for _ in range(k)]
+
+        loss = 0
+        for i in range(k):
+            log_prob_groups[i] = log_prob[k_indicator == i]
+            weights_groups[i] = weights[k_indicator == i]
+            loss_groups[i] = (-(weights_groups[i] * log_prob_groups[i]) / weights_groups[i].sum()).sum()
+            loss += loss_groups[i]
+
+        return loss / k
+
+        # return -weights*self._neural_net.log_prob(x, context=theta)/weights.sum()

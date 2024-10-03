@@ -42,9 +42,11 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
                  ):
         super().__init__(prior, density_estimator, device)
         self._weights_roundwise = []
+        self._k_indicator_roundwise = []
 
-    def append_weights(self, weights: Tensor):
+    def append_weights(self, weights: Tensor, k_indicator: Tensor):
         self._weights_roundwise.append(weights)
+        self._k_indicator_roundwise.append(k_indicator)
         return self
 
     def append_simulations(
@@ -150,7 +152,7 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
     def get_simulations(
             self,
             starting_round: int = 0,
-    ) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         r"""Returns all $\theta$, $x$, and prior_masks from rounds >= `starting_round`.
 
         If requested, do not return invalid data.
@@ -173,11 +175,14 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
         weights = get_simulations_since_round(
             self._weights_roundwise, self._data_round_index, starting_round
         )
+        k_indicator = get_simulations_since_round(
+            self._k_indicator_roundwise, self._data_round_index, starting_round
+        )
         prior_masks = get_simulations_since_round(
             self._prior_masks, self._data_round_index, starting_round
         )
 
-        return theta, x, weights, prior_masks
+        return theta, x, weights, k_indicator, prior_masks
 
     def get_dataloaders(
             self,
@@ -203,9 +208,9 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
         """
 
         #
-        theta, x, weights, prior_masks = self.get_simulations(starting_round)
+        theta, x, weights, k_indicator, prior_masks = self.get_simulations(starting_round)
 
-        dataset = data.TensorDataset(theta, x, weights, prior_masks)
+        dataset = data.TensorDataset(theta, x, weights, k_indicator, prior_masks)
 
         # Get total number of training examples.
         num_examples = theta.size(0)
@@ -352,7 +357,7 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
         # can `sample()` and `log_prob()`. The network is accessible via `.net`.
         if self._neural_net is None or retrain_from_scratch:
             # Get theta,x to initialize NN
-            theta, x, weights, _ = self.get_simulations(starting_round=start_idx)
+            theta, x, weights, k_indicator, _ = self.get_simulations(starting_round=start_idx)
             # Use only training data for building the neural net (z-scoring transforms)
 
             self._neural_net = self._build_neural_net(
@@ -388,17 +393,19 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
             for batch in train_loader:
                 self.optimizer.zero_grad()
                 # Get batches on current device.
-                theta_batch, x_batch, weights_batch, masks_batch = (
+                theta_batch, x_batch, weights_batch, k_indicator_batch, masks_batch = (
                     batch[0].to(self._device),
                     batch[1].to(self._device),
                     batch[2].to(self._device),
                     batch[3].to(self._device),
+                    batch[4].to(self._device),
                 )
 
                 train_losses = self._loss(
                     theta_batch,
                     x_batch,
                     weights_batch,
+                    k_indicator_batch,
                     masks_batch,
                     proposal,
                     calibration_kernel,
@@ -427,17 +434,19 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
 
             with torch.no_grad():
                 for batch in val_loader:
-                    theta_batch, x_batch, weights_batch, masks_batch = (
+                    theta_batch, x_batch, weights_batch, k_indicator_batch, masks_batch = (
                         batch[0].to(self._device),
                         batch[1].to(self._device),
                         batch[2].to(self._device),
                         batch[3].to(self._device),
+                        batch[4].to(self._device),
                     )
                     # Take negative loss here to get validation log_prob.
                     val_losses = self._loss(
                         theta_batch,
                         x_batch,
                         weights_batch,
+                        k_indicator_batch,
                         masks_batch,
                         proposal,
                         calibration_kernel,
@@ -479,6 +488,7 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
             theta: Tensor,
             x: Tensor,
             weights: Tensor,
+            k_indicator: Tensor,
             masks: Tensor,
             proposal: Optional[Any],
             calibration_kernel: Callable,
@@ -501,4 +511,31 @@ class CostAwarePosteriorEstimator(PosteriorEstimator):
         else:
             log_prob = self._log_prob_proposal_posterior(theta, x, masks, proposal)
 
-        return -(weights * calibration_kernel(x) * log_prob)/weights.sum()
+        k = k_indicator.max().item() + 1
+        log_prob_groups = [[] for _ in range(k)]
+        weights_groups = [[] for _ in range(k)]
+        x_groups = [[] for _ in range(k)]
+        loss_groups = [[] for _ in range(k)]
+
+        loss = 0
+        for i in range(k):
+            log_prob_groups[i] = log_prob[k_indicator == i]
+            weights_groups[i] = weights[k_indicator == i]
+            x_groups[i] = x[k_indicator == i]
+            loss_groups[i] = (-(weights_groups[i] * calibration_kernel(x_groups[i]) * log_prob_groups[i]) / weights_groups[i].sum()).sum()
+            loss += loss_groups[i]
+        # print(loss_groups)
+        #
+        # loss = torch.zeros_like(log_prob)
+        # for i in range(k):
+        #     loss[k_indicator == i] = -(weights_groups[i] * calibration_kernel(x_groups[i]) * log_prob_groups[i]) / weights_groups[i].sum()
+        #     # print(loss[k_indicator == i])
+
+        loss = loss / k
+
+        return loss
+
+
+
+
+        # return -(weights * calibration_kernel(x) * log_prob)/weights.sum()
