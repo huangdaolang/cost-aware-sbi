@@ -9,4 +9,6 @@ theta_0j: 0.99
 
 inference: "abc"
 
-k_mixture: [0., 3., 6., 9.]
+k_mixture: [0., 2., 4., 6.]
+
+k: 4

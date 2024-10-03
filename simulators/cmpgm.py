@@ -11,7 +11,8 @@ class CMPGM(object):
                  theta_ij=0.1,
                  theta_0j=0.99,
                  inference=None,
-                 k_mixture=None):
+                 k_mixture=None,
+                 k=None):
         self.path = os.path.dirname(os.path.realpath(__file__))
         self.name = name
         self.dim = dim
