@@ -51,12 +51,10 @@ class Turin(object):
             x = torch.tensor(np.load(f'{self.path}/../data/turin_x_ca_nle_mixture.npy'))
             theta = torch.tensor(np.load(f'{self.path}/../data/turin_theta_ca_nle_mixture.npy'))
             w = torch.tensor(np.load(f'{self.path}/../data/turin_weights_mixture.npy'))
-            w = w / w.sum()
         else:
             x = torch.tensor(np.load(f'{self.path}/../data/turin_x_ca_nle_k2.npy'))
             theta = torch.tensor(np.load(f'{self.path}/../data/turin_theta_ca_nle_k2.npy'))
             w = self.cost_function(theta[:, 2], k)
-            w = w / w.sum()
 
         return x, theta, w
 
@@ -66,6 +64,6 @@ class Turin(object):
 
 if __name__ == "__main__":
     turin = Turin()
-    turin.load_ca_npe_data(False)
+    turin.load_ca_npe_data(True)
 
 
