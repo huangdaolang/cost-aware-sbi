@@ -43,6 +43,10 @@ def train(cfg):
 
     # CA-NPE
     x_canpe, theta_canpe, w_canpe = simulator.load_ca_npe_data(cfg.mixture, cfg.k)
+    if cfg.mixture:
+        k_indicator_canpe = torch.cat([torch.full((2500,), i) for i in range(4)])
+    else:
+        k_indicator_canpe = torch.full((10000,), 0)
 
     if cfg.simulator.inference == "npe":
         inference_canpe = CostAwareSNPE_C(prior=prior)
@@ -51,7 +55,7 @@ def train(cfg):
     else:
         raise ValueError("Invalid inference method")
 
-    density_estimator_canpe = inference_canpe.append_simulations(theta_canpe, x_canpe).append_weights(w_canpe).train()
+    density_estimator_canpe = inference_canpe.append_simulations(theta_canpe, x_canpe).append_weights(w_canpe, k_indicator_canpe).train()
     posterior_canpe = inference_canpe.build_posterior(density_estimator_canpe)
 
     posterior_samples_canpe = posterior_canpe.sample((1000,), x=obs_x)

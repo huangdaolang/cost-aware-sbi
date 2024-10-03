@@ -69,6 +69,7 @@ def train(cfg):
     theta_canpe = torch.zeros([N, cfg.simulator.theta_dim])
     x_canpe = torch.empty([N, cfg.simulator.x_dim])
     w_canpe = torch.zeros([N])
+    k_indicator_canpe = torch.zeros([N], dtype=torch.int)
     count = 0
 
     st_sim = time.time()
@@ -83,6 +84,7 @@ def train(cfg):
                 if utils.calc_acc_prob(cost_func_model, cost_func_ll, theta_, prior_start, cfg.simulator.k_mixture[ind]) > torch.rand(1):
                     theta_canpe[count] = theta_
                     w_canpe[count] = cost_func_ll(cost_func_model(theta_canpe[[count]])).mean.detach() ** cfg.simulator.k_mixture[ind]
+                    k_indicator_canpe[count] = ind
                     count += 1
     else:
         while count < N:
@@ -91,6 +93,7 @@ def train(cfg):
                 theta_canpe[count] = theta_.reshape(-1)
                 count += 1
         w_canpe = cost_func_ll(cost_func_model(theta_canpe)).mean.detach() ** cfg.k
+        k_indicator_canpe = torch.full((N,), 0)
 
     et_sim = time.time()
     print("Sampling time: ", et_sim - st_sim)
@@ -105,7 +108,7 @@ def train(cfg):
     print("total_cost", total_cost_canpe)
 
     inference_canpe = CostAwareSNPE_C(prior=prior)
-    density_estimator_canpe = inference_canpe.append_simulations(theta_canpe, x_canpe).append_weights(w_canpe).train()
+    density_estimator_canpe = inference_canpe.append_simulations(theta_canpe, x_canpe).append_weights(w_canpe, k_indicator_canpe).train()
     posterior_canpe = inference_canpe.build_posterior(density_estimator_canpe)
 
     posterior_samples_canpe = posterior_canpe.sample((1000,), x=obs_x)
