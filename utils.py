@@ -6,16 +6,21 @@ from gpytorch.kernels import ScaleKernel, RBFKernel
 from gpytorch.means import ConstantMean
 from gpytorch.distributions import MultivariateNormal
 from gpytorch.mlls import ExactMarginalLogLikelihood
+import scipy.spatial.distance as distance
 
 
 def MMD_unweighted(x, y, lengthscale):
     """ Approximates the squared MMD between samples x_i ~ P and y_i ~ Q
     """
 
+    if len(x.shape) == 1:
+        x = np.array(x, ndmin=2).transpose()
+        y = np.array(y, ndmin=2).transpose()
+
     m = x.shape[0]
     n = y.shape[0]
 
-    z = torch.cat((x, y), dim=0)
+    z = np.concatenate((x, y), axis=0)
 
     K = kernel_matrix(z, z, lengthscale)
 
@@ -23,20 +28,53 @@ def MMD_unweighted(x, y, lengthscale):
     kyy = K[m:(m + n), m:(m + n)]
     kxy = K[0:m, m:(m + n)]
 
-    return (1 / m ** 2) * torch.sum(kxx) - (2 / (m * n)) * torch.sum(kxy) + (1 / n ** 2) * torch.sum(kyy)
+    return (1 / m ** 2) * np.sum(kxx) - (2 / (m * n)) * np.sum(kxy) + (1 / n ** 2) * np.sum(kyy)
 
+
+def MMD_weighted(x, y, w, lengthscale):
+    #     """ Optimally weighted squared MMD estimate between samples x_i ~ P and y_i ~ Q
+    #     """
+
+    if len(x.shape) == 1:
+        x = np.array(x, ndmin=2).transpose()
+        y = np.array(y, ndmin=2).transpose()
+        w = np.array(w, ndmin=2).transpose()
+
+    m = x.shape[0]
+    n = y.shape[0]
+
+    xy = np.concatenate((x, y), axis=0)
+
+    K = kernel_matrix(xy, xy, lengthscale)
+
+    kxx = K[0:m, 0:m]
+    kyy = K[m:(m + n), m:(m + n)]
+    kxy = K[0:m, m:(m + n)]
+
+    # first sum
+    sum1 = np.matmul(np.matmul(w.transpose(), kxx), w)
+
+    # second sum
+    sum2 = np.sum(np.matmul(w.transpose(), kxy))
+
+    # third sum
+    sum3 = (1 / n ** 2) * np.sum(kyy)
+
+    return sum1 - (2 / (n)) * sum2 + sum3
 
 def median_heuristic(y):
-    a = torch.cdist(y, y)**2
-    return torch.sqrt(torch.median(a / 2))
+    a = distance.cdist(y, y, 'sqeuclidean')
+    return np.sqrt(np.median(a / 2))
 
 
+# Function to compute the kernel Gram matrix
 def kernel_matrix(x, y, l):
-    d = torch.cdist(x, y)**2
+    if len(x.shape) == 1:
+        x = np.array(x, ndmin=2).transpose()
+        y = np.array(y, ndmin=2).transpose()
 
-    kernel = torch.exp(-(1 / (2 * l ** 2)) * d)
+    return np.exp(-(1 / (2 * l ** 2)) * distance.cdist(x, y, 'sqeuclidean'))
 
-    return kernel
 
 def gamma_sampler(theta, n=500):
     data = torch.zeros(2)
