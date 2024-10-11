@@ -1,5 +1,3 @@
-import torch
-
 from cost_aware_snpe_c import CostAwareSNPE_C
 from sbi.inference.snpe.snpe_c import SNPE_C
 from sbi.utils.torchutils import *
@@ -7,7 +5,6 @@ from sbi.utils import process_prior
 import gpytorch
 
 import time
-import numpy as np
 import hydra
 from hydra.core.hydra_config import HydraConfig
 from hydra.utils import get_original_cwd
@@ -36,9 +33,6 @@ def train(cfg):
     et_npe = time.time()
     cost_npe = et_npe - st_npe
     print("NPE cost: ", cost_npe)
-
-    # torch.save(theta_npe, f"data/homo_sir_large/homo_sir_theta_npe_large_{cfg.seed}.pt")
-    # torch.save(x_npe, f"data/homo_sir_large/homo_sir_x_npe_large_{cfg.seed}.pt")
 
     obs_x = torch.load("data/" + simulator.name + "_obs_x.pt")
     obs_theta = torch.load("data/" + simulator.name + "_obs_theta.pt")
@@ -97,15 +91,13 @@ def train(cfg):
 
     et_sim = time.time()
     print("Sampling time: ", et_sim - st_sim)
-    st_canpe = time.time()
+
     for i in range(N):
         x_canpe[i, :] = simulator(theta_canpe[i])
     et_canpe = time.time()
-    cost_canpe = et_canpe - st_canpe
-    print("CA-NPE cost: ", cost_canpe)
 
     total_cost_canpe = et_canpe - st_sim
-    print("total_cost", total_cost_canpe)
+    print("CA-NPE cost", total_cost_canpe)
 
     inference_canpe = CostAwareSNPE_C(prior=prior)
     density_estimator_canpe = inference_canpe.append_simulations(theta_canpe, x_canpe).append_weights(w_canpe, k_indicator_canpe).train()
@@ -127,7 +119,7 @@ def train(cfg):
         output_directory = get_original_cwd()
         print(f"{output_directory=}")
         if cfg.mixture is True:
-            checkpoint_path = os.path.join(output_directory, "sims", simulator.name, "mixture", str(cfg.seed))
+            checkpoint_path = os.path.join(output_directory, "sims", simulator.name, "multiple", str(cfg.seed))
         else:
             checkpoint_path = os.path.join(output_directory, "sims", simulator.name, str(cfg.k), str(cfg.seed))
         if not os.path.exists(checkpoint_path):
