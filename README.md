@@ -1,5 +1,5 @@
 # Cost-aware Simulation-based Inference
-This repository contains the code for the paper "Cost-aware Simulation-based Inference". Our work is built on top of [sbi](https://github.com/sbi-dev/sbi) package.
+This repository contains the code for the paper "[Cost-aware Simulation-based Inference](https://arxiv.org/abs/2410.07930)". Our work is built on top of [sbi](https://github.com/sbi-dev/sbi) package.
 
 ## Installation
 ```
