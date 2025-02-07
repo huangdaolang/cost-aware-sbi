@@ -9,6 +9,15 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 import scipy.spatial.distance as distance
 
 
+# Acceptance probability function for Gamma simulator's linear cost. Penalty function is g(z) = z^k
+def A_theta_Gamma(theta, k, alpha, beta, prior_start):
+    return (alpha * prior_start + beta)**k / (alpha * theta + beta)**k
+
+
+def cost_linear(theta, alpha, beta):
+    return alpha * theta + beta
+
+
 def MMD_unweighted(x, y, lengthscale):
     """ Approximates the squared MMD between samples x_i ~ P and y_i ~ Q
     """
@@ -145,6 +154,18 @@ def calc_acc_prob(model, likelihood, theta, prior_start, k):
         lower_cost = likelihood(model(prior_start)).mean
     return (lower_cost ** k) / (cost**k)
 
+
+def calc_acc_prob_linear(a_1, a_2, b, theta, prior_start, k):
+    # cost = a_1 * theta[:, 0] + a_2 * theta[:, 1] + b
+    # lower_cost = a_1 * prior_start[:, 0] + a_2 * prior_start[:, 1] + b
+    cost = cost_linear_step(a_1, a_2, b, theta)
+    lower_cost = cost_linear_step(a_1, a_2, b, prior_start)
+    return (lower_cost ** k) / (cost**k)
+
+
+def cost_linear_step(a_1, a_2, b, theta):
+    cost = a_1 * theta[:, 0] + a_2 * theta[:, 1] + b
+    return cost if cost > 0.03 else 0.03
 
 def mad(data, axis=None):
     return np.mean(np.abs(data - np.mean(data, axis)), axis)
