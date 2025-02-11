@@ -32,12 +32,10 @@ In each notebook, we show how to create the cost function, and also the plots an
 If you use this code in your research, please cite our paper:
 
 ```
-@misc{bharti2024costawaresimulationbasedinference,
+@inproceedings{bharti2025costawaresimulationbasedinference,
       title={Cost-aware Simulation-based Inference}, 
       author={Ayush Bharti and Daolang Huang and Samuel Kaski and François-Xavier Briol},
-      year={2024},
-      eprint={2410.07930},
-      archivePrefix={arXiv},
-      url={https://arxiv.org/abs/2410.07930}, 
+      booktitle={International Conference on Artificial Intelligence and Statistics (AISTATS)},
+      year={2025}
 }
 ```
